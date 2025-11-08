@@ -38,7 +38,7 @@ const SPRINGER_OA_BASE = process.env.SPRINGER_OA_BASE || 'https://api.springerna
 
 const exaSchema = z.object({
   query: z.string(),
-  category: z.enum(['papers', 'research', 'company']).default('papers'),
+  type: z.enum(['neural', 'keyword', 'auto', 'hybrid', 'fast', 'magic', 'deep']).default('neural'),
   num_results: z.number().int().min(1).max(50).default(10)
 });
 const exaInputShape = exaSchema.shape;
@@ -117,9 +117,9 @@ async function httpPost(url: string, data: any, headers?: Record<string, string>
   return res.data;
 }
 
-async function exaSearch(query: string, category: string, num: number) {
+async function exaSearch(query: string, type: string, num: number) {
   if (!EXA_API_KEY) throw new Error('Missing EXA_API_KEY');
-  const payload = { query, type: category, num_results: num, text: true };
+  const payload = { query, type, num_results: num, text: true };
   return await httpPost(EXA_API_URL, payload, { Authorization: `Bearer ${EXA_API_KEY}` });
 }
 
@@ -243,7 +243,7 @@ function createServer() {
     async (input) => {
       try {
         const args = exaSchema.parse(input);
-        const data = await exaSearch(args.query, args.category, args.num_results);
+        const data = await exaSearch(args.query, args.type, args.num_results);
         return ok({ provider: 'exa', args, data, provenance: { url: EXA_API_URL } });
       } catch (e: any) {
         return err(e.message);
